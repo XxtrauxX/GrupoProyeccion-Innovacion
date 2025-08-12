@@ -11,15 +11,14 @@ import java.io.IOException;
 public class PdfService {
 
     public String extractTextFromPdf(MultipartFile file) throws IOException {
-      
         try (PDDocument document = PDDocument.load(file.getInputStream())) {
-
             
             PDFTextStripper pdfStripper = new PDFTextStripper();
-
+            
+            
+            pdfStripper.setSortByPosition(true);
             
             String text = pdfStripper.getText(document);
-
             return text;
         }
     }
