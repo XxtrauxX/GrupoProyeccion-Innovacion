@@ -16,7 +16,7 @@ COPY src ./src
 # "-DskipTests" acelera la construcción al omitir las pruebas
 RUN mvn clean package -DskipTests
 
-# Expone el puerto 8080 para que el mundo exterior pueda acceder a la aplicación
+# Expone el puerto 8080 para que el mundo exterior pueda acceder a la aplicaciónnnnn
 EXPOSE 8080
 
 # El comando que se ejecutará cuando el contenedor se inicie
