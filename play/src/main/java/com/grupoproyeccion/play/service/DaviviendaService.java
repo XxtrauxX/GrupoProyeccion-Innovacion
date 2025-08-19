@@ -4,21 +4,31 @@ import com.grupoproyeccion.play.model.AccountBancolombia;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class DaviviendaService implements StatementParser {
 
-    private static final List<String> KNOWN_BRANCHES = Arrays.asList(
+    private static final List<String> KNOWN_BRANCHES;
+
+    static {
+        List<String> branches = Arrays.asList(
             "Compras y Pagos PSE",
             "PORTAL PYMES INTERBANCARI",
             "PORTAL PYMES",
             "BTA PROCESOS ESP.",
             "BTA PROCESOS ESP",
-            "0000"
-    );
+            "0000",
+            "PROCESOS ACH"
+        );
+        KNOWN_BRANCHES = branches.stream()
+                                 .sorted(Comparator.comparingInt(String::length).reversed())
+                                 .collect(Collectors.toList());
+    }
 
     @Override
     public boolean supports(String text) {
@@ -43,36 +53,36 @@ public class DaviviendaService implements StatementParser {
                     nextIndex++;
                 }
 
-                String fullLine = fullTransactionText.toString().replaceAll("\\s+", " ");
+                String fullLine = fullTransactionText.toString();
 
                 try {
-                    // Extraer fecha (DD MM)
-                    Pattern datePattern = Pattern.compile("^(\\d{2}\\s\\d{2})");
+                    Pattern datePattern = Pattern.compile("^(\\d{2})\\s+(\\d{2})");
                     Matcher dateMatcher = datePattern.matcher(fullLine);
-                    dateMatcher.find();
-                    String datePart = dateMatcher.group(1).replace(" ", "/");
-                    String date = datePart + "/" + year;
+                    if (!dateMatcher.find()) continue;
+                    String date = dateMatcher.group(1) + "/" + dateMatcher.group(2) + "/" + year;
 
-                    // Extraer valor ($ 1,234.56+ ó -)
                     Pattern valuePattern = Pattern.compile("\\$ ([\\d,.]+)([+-]?)");
                     Matcher valueMatcher = valuePattern.matcher(fullLine);
-                    valueMatcher.find();
+                    if (!valueMatcher.find()) continue;
                     double value = parseValue(valueMatcher.group(0));
 
-                    // Extraer Descripción y Oficina (todo lo que está después del valor)
-                    String descriptionAndBranchPart = fullLine.substring(valueMatcher.end()).trim();
-                    
-                    String description = descriptionAndBranchPart;
                     String branch = "";
-
                     for (String knownBranch : KNOWN_BRANCHES) {
-                        if (descriptionAndBranchPart.endsWith(knownBranch)) {
+                        if (fullLine.contains(knownBranch)) {
                             branch = knownBranch;
-                            description = descriptionAndBranchPart.substring(0, descriptionAndBranchPart.length() - knownBranch.length()).trim();
                             break;
                         }
                     }
 
+                    
+                    String description = fullLine
+                            .replace(dateMatcher.group(0), "")
+                            .replace(valueMatcher.group(0), "")
+                            .replace(branch, "")
+                            
+                            .replaceAll("\\s+", " ")
+                            .trim();
+                    
                     transactions.add(new AccountBancolombia(date, description, value, branch));
 
                 } catch (Exception e) {
@@ -84,7 +94,7 @@ public class DaviviendaService implements StatementParser {
         return transactions;
     }
     
-    
+   
     private double parseValue(String valuePart) {
         Matcher valueMatcher = Pattern.compile("[\\d,.]+").matcher(valuePart);
         valueMatcher.find();
