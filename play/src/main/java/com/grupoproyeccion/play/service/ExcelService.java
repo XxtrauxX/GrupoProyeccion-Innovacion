@@ -18,12 +18,11 @@ public class ExcelService {
 
     public ByteArrayInputStream transactionsToExcel(List<AccountBancolombia> transactions) throws IOException {
         
-        // --- LÓGICA INTELIGENTE PARA DETERMINAR LAS COLUMNAS ---
-        // 1. Verificamos si alguna de las transacciones tiene datos en el campo 'branch'.
+       
         boolean includeBranchColumn = transactions.stream()
                 .anyMatch(t -> t.getBranch() != null && !t.getBranch().isEmpty());
 
-        // 2. Definimos los encabezados dinámicamente.
+       
         String[] HEADERS;
         if (includeBranchColumn) {
             HEADERS = new String[]{ "Fecha", "Descripción", "Valor", "Oficina" };
@@ -89,8 +88,7 @@ public class ExcelService {
             valueCell.setCellValue(transaction.getValue());
             valueCell.setCellStyle(currencyCellStyle);
             
-            // --- LÓGICA INTELIGENTE PARA ESCRIBIR LA CELDA ---
-            // 3. Solo intentamos escribir la columna "Oficina" si el encabezado existe.
+          
             if (headers.length > 3) {
                 row.createCell(3).setCellValue(transaction.getBranch());
             }
