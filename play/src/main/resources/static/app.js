@@ -12,89 +12,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let selectedFile = null;
 
-
-
-
+    // --- Lógica de la interfaz (sin cambios) ---
     dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); });
+    ['dragleave', 'dragend'].forEach(type => { dropZone.addEventListener(type, () => { dropZone.classList.remove('drop-zone--over'); }); });
+    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); if (e.dataTransfer.files.length > 0) { updateFileDisplay(e.dataTransfer.files[0]); } });
+    fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) { updateFileDisplay(fileInput.files[0]); } });
+    function updateFileDisplay(file) { selectedFile = file; fileNameSpan.textContent = file.name; filePreview.classList.remove('hidden'); filePreview.classList.add('flex'); passwordSection.classList.remove('hidden'); dropZone.classList.add('hidden'); submitBtn.disabled = false; statusMessage.textContent = ''; }
+    removeFileBtn.addEventListener('click', () => { selectedFile = null; fileInput.value = ''; passwordInput.value = ''; filePreview.classList.add('hidden'); passwordSection.classList.add('hidden'); filePreview.classList.remove('flex'); dropZone.classList.remove('hidden'); submitBtn.disabled = true; });
 
-
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drop-zone--over');
-    });
-
-    ['dragleave', 'dragend'].forEach(type => {
-        dropZone.addEventListener(type, () => {
-            dropZone.classList.remove('drop-zone--over');
-        });
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drop-zone--over');
-        if (e.dataTransfer.files.length > 0) {
-            updateFileDisplay(e.dataTransfer.files[0]);
-        }
-    });
-
-
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            updateFileDisplay(fileInput.files[0]);
-        }
-    });
-
-
-    function updateFileDisplay(file) {
-        selectedFile = file;
-        fileNameSpan.textContent = file.name;
-
-
-        filePreview.classList.remove('hidden');
-        filePreview.classList.add('flex');
-        passwordSection.classList.remove('hidden');
-
-
-        dropZone.classList.add('hidden');
-
-
-        submitBtn.disabled = false;
-        statusMessage.textContent = '';
-    }
-
-
-    removeFileBtn.addEventListener('click', () => {
-        selectedFile = null;
-        fileInput.value = '';
-        passwordInput.value = '';
-
-
-        filePreview.classList.add('hidden');
-        passwordSection.classList.add('hidden');
-        filePreview.classList.remove('flex');
-
-
-        dropZone.classList.remove('hidden');
-
-
-        submitBtn.disabled = true;
-    });
-
-    // --- LÓGICA DE ENVÍO AL BACKEND ---
-
+    // --- LÓGICA DE ENVÍO AL BACKEND (ACTUALIZADA) ---
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!selectedFile) return;
 
-
         const formData = new FormData();
         formData.append('file', selectedFile);
-
 
         if (passwordInput.value) {
             formData.append('password', passwordInput.value);
         }
-
 
         submitBtn.disabled = true;
         submitBtn.innerHTML = `
@@ -109,39 +46,46 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage.classList.add('text-blue-500');
 
         try {
+            // =========== LÓGICA DE "CARRILES" ===========
+            const statementType = document.querySelector('input[name="statement_type"]:checked').value;
+            let uploadUrl = '/api/files/upload-account'; // URL por defecto para Cuentas
+            let downloadFileName = `ConciliacionBancaria_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
-            const response = await axios.post('/api/files/upload', formData, {
+            if (statementType === 'credit_card') {
+                uploadUrl = '/api/files/upload-credit-card'; // URL para Tarjetas de Crédito
+                downloadFileName = `ReporteTarjetaCredito_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            }
+            // ============================================
+
+            const response = await axios.post(uploadUrl, formData, {
                 responseType: 'blob',
             });
-
 
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            const fileName = `Conciliacion_${new Date().toISOString().slice(0, 10)}.xlsx`;
-            link.setAttribute('download', fileName);
+            link.setAttribute('download', downloadFileName); // Nombre de archivo dinámico
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
 
-            statusMessage.textContent = `¡Éxito! Tu archivo "${fileName}" se ha descargado.`;
+            statusMessage.textContent = `¡Éxito! Tu archivo "${downloadFileName}" se ha descargado.`;
             statusMessage.classList.remove('text-blue-500');
             statusMessage.classList.add('text-green-600');
 
         } catch (error) {
-
             let errorMessage = '¡Error! No se pudo procesar el archivo. Por favor, inténtalo de nuevo.';
             if (error.response && error.response.status === 400) {
-
-                errorMessage = await error.response.data.text();
+                 // Para leer el mensaje de error que viene como blob de texto
+                const errorBlob = new Blob([error.response.data], { type: 'text/plain' });
+                errorMessage = await errorBlob.text();
             }
             statusMessage.textContent = errorMessage;
             statusMessage.classList.remove('text-blue-500');
             statusMessage.classList.add('text-red-600');
             console.error('Error en la subida:', error);
         } finally {
-
             submitBtn.innerHTML = 'Convertir a Excel';
             removeFileBtn.click();
         }

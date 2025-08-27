@@ -10,6 +10,13 @@
             border-style: solid;
             background-color: #cde8f5;
         }
+        /* Estilos para los botones de radio personalizados */
+        input[type="radio"]:checked + label {
+            background-color: #2563eb; /* bg-blue-600 */
+            color: white;
+            border-color: #2563eb; /* border-blue-600 */
+            z-index: 10;
+        }
     </style>
     <link rel="icon" type="image/png" href="https://www.grupoproyeccion.com/wp-content/uploads/2024/02/icoico2-150x150.png">
 </head>
@@ -20,16 +27,30 @@
     </div>
 
     <div class="bg-white rounded-lg shadow-xl p-8 max-w-lg w-full text-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Convierte tu Extracto Bancolombia y Davivienda</h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Convierte tu Extracto Bancario</h1>
         <p class="text-gray-500 mb-6">Sube tu archivo PDF para transformarlo en un Excel organizado.</p>
 
         <form id="uploadForm" class="space-y-6">
-            <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-10 cursor-pointer hover:border-blue-500 transition-colors">
-                <input type="file" id="fileInput" class="hidden" accept=".pdf">
-                <div class="flex flex-col items-center">
-                    <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V6a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v6m0 0l-3-3m3 3l3-3"></path></svg>
-                    <p class="text-gray-500"><span class="font-semibold text-blue-600">Haz clic para subir</span> o arrastra tu archivo aquí</p>
-                    <p class="text-xs text-gray-400 mt-1">Solo se permiten archivos PDF</p>
+            
+            <div class="text-left">
+                <label class="block text-sm font-medium text-gray-700 mb-2">1. Selecciona el Tipo de Extracto</label>
+                <div class="relative flex rounded-md">
+                    <input type="radio" name="statement_type" id="type_account" value="account" class="hidden" checked>
+                    <label for="type_account" class="flex-1 text-center px-4 py-2 border border-gray-300 rounded-l-md cursor-pointer text-sm font-medium hover:bg-gray-50 transition-colors -mr-px">Cuentas (Ahorros/Corriente)</label>
+                    
+                    <input type="radio" name="statement_type" id="type_credit_card" value="credit_card" class="hidden">
+                    <label for="type_credit_card" class="flex-1 text-center px-4 py-2 border border-gray-300 rounded-r-md cursor-pointer text-sm font-medium hover:bg-gray-50 transition-colors">Tarjeta de Crédito</label>
+                </div>
+            </div>
+            <div class="text-left">
+                <label class="block text-sm font-medium text-gray-700 mb-2">2. Sube tu Archivo</label>
+                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-10 cursor-pointer hover:border-blue-500 transition-colors">
+                    <input type="file" id="fileInput" class="hidden" accept=".pdf">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V6a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v6m0 0l-3-3m3 3l3-3"></path></svg>
+                        <p class="text-gray-500"><span class="font-semibold text-blue-600">Haz clic para subir</span> o arrastra tu archivo aquí</p>
+                        <p class="text-xs text-gray-400 mt-1">Solo se permiten archivos PDF</p>
+                    </div>
                 </div>
             </div>
             
@@ -49,6 +70,7 @@
         </form>
 
         <div id="statusMessage" class="mt-4 text-sm"></div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
