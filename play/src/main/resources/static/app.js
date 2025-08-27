@@ -1,93 +1,123 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const submitBtn = document.getElementById('submitBtn');
-    const uploadForm = document.getElementById('uploadForm');
-    const filePreview = document.getElementById('filePreview');
-    const fileNameSpan = document.getElementById('fileName');
-    const removeFileBtn = document.getElementById('removeFileBtn');
-    const statusMessage = document.getElementById('statusMessage');
-    const passwordSection = document.getElementById('passwordSection');
-    const passwordInput = document.getElementById('passwordInput');
 
-    let selectedFile = null;
+    /**
+     * Función reutilizable para inicializar una tarjeta de subida de archivos.
+     * @param {string} formClass - La clase CSS del formulario de la tarjeta.
+     * @param {string} uploadUrl - El endpoint del backend al que se enviará el archivo.
+     * @param {string} downloadFileNameBase - El nombre base para el archivo descargado.
+     */
+    function initializeUploader(formClass, uploadUrl, downloadFileNameBase) {
+        const uploadCard = document.querySelector(`.${formClass}`).closest('.upload-card');
+        if (!uploadCard) return;
 
-    // --- Lógica de la interfaz (sin cambios) ---
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); });
-    ['dragleave', 'dragend'].forEach(type => { dropZone.addEventListener(type, () => { dropZone.classList.remove('drop-zone--over'); }); });
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); if (e.dataTransfer.files.length > 0) { updateFileDisplay(e.dataTransfer.files[0]); } });
-    fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) { updateFileDisplay(fileInput.files[0]); } });
-    function updateFileDisplay(file) { selectedFile = file; fileNameSpan.textContent = file.name; filePreview.classList.remove('hidden'); filePreview.classList.add('flex'); passwordSection.classList.remove('hidden'); dropZone.classList.add('hidden'); submitBtn.disabled = false; statusMessage.textContent = ''; }
-    removeFileBtn.addEventListener('click', () => { selectedFile = null; fileInput.value = ''; passwordInput.value = ''; filePreview.classList.add('hidden'); passwordSection.classList.add('hidden'); filePreview.classList.remove('flex'); dropZone.classList.remove('hidden'); submitBtn.disabled = true; });
+        const uploadForm = uploadCard.querySelector('form');
+        const dropZone = uploadCard.querySelector('.drop-zone');
+        const fileInput = uploadCard.querySelector('.file-input');
+        const submitBtn = uploadCard.querySelector('.submit-btn');
+        const filePreview = uploadCard.querySelector('.file-preview');
+        const fileNameSpan = uploadCard.querySelector('.file-name');
+        const removeFileBtn = uploadCard.querySelector('.remove-file-btn');
+        const statusMessage = uploadCard.querySelector('.status-message');
+        const passwordSection = uploadCard.querySelector('.password-section');
+        const passwordInput = uploadCard.querySelector('.password-input');
+        
+        let selectedFile = null;
 
-    // --- LÓGICA DE ENVÍO AL BACKEND (ACTUALIZADA) ---
-    uploadForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!selectedFile) return;
-
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-
-        if (passwordInput.value) {
-            formData.append('password', passwordInput.value);
+        // --- Lógica de la interfaz ---
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone--over'); });
+        ['dragleave', 'dragend'].forEach(type => { dropZone.addEventListener(type, () => { dropZone.classList.remove('drop-zone--over'); }); });
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drop-zone--over'); if (e.dataTransfer.files.length > 0) { updateFileDisplay(e.dataTransfer.files[0]); } });
+        fileInput.addEventListener('change', () => { if (fileInput.files.length > 0) { updateFileDisplay(fileInput.files[0]); } });
+        
+        function updateFileDisplay(file) {
+            selectedFile = file;
+            fileNameSpan.textContent = file.name;
+            filePreview.classList.remove('hidden');
+            passwordSection.classList.remove('hidden');
+            dropZone.style.display = 'none';
+            submitBtn.disabled = false;
+            statusMessage.textContent = '';
         }
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-            <svg class="animate-spin h-5 w-5 mr-3 inline-block" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Procesando...
-        `;
-        statusMessage.textContent = 'Tu archivo está siendo analizado. Esto puede tardar unos segundos...';
-        statusMessage.classList.remove('text-red-600', 'text-green-600');
-        statusMessage.classList.add('text-blue-500');
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            passwordInput.value = '';
+            filePreview.classList.add('hidden');
+            passwordSection.classList.add('hidden');
+            dropZone.style.display = 'block';
+            submitBtn.disabled = true;
+        });
 
-        try {
-            // =========== LÓGICA DE "CARRILES" ===========
-            const statementType = document.querySelector('input[name="statement_type"]:checked').value;
-            let uploadUrl = '/api/files/upload-account'; // URL por defecto para Cuentas
-            let downloadFileName = `ConciliacionBancaria_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        // --- Lógica de envío al backend ---
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedFile) return;
 
-            if (statementType === 'credit_card') {
-                uploadUrl = '/api/files/upload-credit-card'; // URL para Tarjetas de Crédito
-                downloadFileName = `ReporteTarjetaCredito_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            if (passwordInput.value) {
+                formData.append('password', passwordInput.value);
             }
-            // ============================================
 
-            const response = await axios.post(uploadUrl, formData, {
-                responseType: 'blob',
-            });
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `Procesando...`;
+            statusMessage.textContent = 'Tu archivo está siendo analizado...';
+            statusMessage.className = 'status-message mt-4 text-xs text-blue-500';
 
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', downloadFileName); // Nombre de archivo dinámico
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            try {
+                const response = await axios.post(uploadUrl, formData, { responseType: 'blob' });
 
-            statusMessage.textContent = `¡Éxito! Tu archivo "${downloadFileName}" se ha descargado.`;
-            statusMessage.classList.remove('text-blue-500');
-            statusMessage.classList.add('text-green-600');
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                const fileName = `${downloadFileNameBase}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
 
-        } catch (error) {
-            let errorMessage = '¡Error! No se pudo procesar el archivo. Por favor, inténtalo de nuevo.';
-            if (error.response && error.response.status === 400) {
-                 // Para leer el mensaje de error que viene como blob de texto
-                const errorBlob = new Blob([error.response.data], { type: 'text/plain' });
-                errorMessage = await errorBlob.text();
+                statusMessage.textContent = `¡Éxito! Tu archivo se ha descargado.`;
+                statusMessage.className = 'status-message mt-4 text-xs text-green-600';
+
+            } catch (error) {
+                let errorMessage = 'Error: No se pudo procesar el archivo.';
+                if (error.response && error.response.data) {
+                    const errorBlob = new Blob([error.response.data], { type: 'text/plain' });
+                    errorMessage = await errorBlob.text();
+                }
+                statusMessage.textContent = errorMessage;
+                statusMessage.className = 'status-message mt-4 text-xs text-red-600';
+            } finally {
+                submitBtn.innerHTML = 'Convertir';
+                removeFileBtn.click();
             }
-            statusMessage.textContent = errorMessage;
-            statusMessage.classList.remove('text-blue-500');
-            statusMessage.classList.add('text-red-600');
-            console.error('Error en la subida:', error);
-        } finally {
-            submitBtn.innerHTML = 'Convertir a Excel';
-            removeFileBtn.click();
-        }
-    });
+        });
+    }
+
+    // =================================================================================
+    // AQUÍ INICIALIZAMOS CADA TARJETA CON SU CONFIGURACIÓN ESPECÍFICA
+    // =================================================================================
+    
+    initializeUploader(
+        'bancolombia-account-form',
+        '/api/bancolombia-account/process',
+        'Conciliacion_Bancolombia_Cuentas'
+    );
+
+    initializeUploader(
+        'davivienda-account-form',
+        '/api/davivienda-account/process',
+        'Conciliacion_Davivienda_Cuentas'
+    );
+
+    // Activamos la nueva tarjeta para Tarjetas de Crédito de Bancolombia
+    initializeUploader(
+        'bancolombia-credit-card-form',
+        '/api/bancolombia-credit-card/process',
+        'Reporte_TC_Bancolombia'
+    );
+    
 });
