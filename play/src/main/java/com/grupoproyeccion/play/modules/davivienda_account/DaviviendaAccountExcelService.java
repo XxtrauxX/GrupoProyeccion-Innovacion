@@ -1,4 +1,4 @@
-package com.grupoproyeccion.play.service;
+package com.grupoproyeccion.play.modules.davivienda_account;
 
 import com.grupoproyeccion.play.model.AccountBancolombia;
 import org.apache.poi.ss.usermodel.*;
@@ -8,57 +8,48 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-public class ExcelService {
+public class DaviviendaAccountExcelService {
 
     public ByteArrayInputStream transactionsToExcel(List<AccountBancolombia> transactions) throws IOException {
-        
-       
-        boolean includeBranchColumn = transactions.stream()
-                .anyMatch(t -> t.getBranch() != null && !t.getBranch().isEmpty());
-
-       
-        String[] HEADERS;
-        if (includeBranchColumn) {
-            HEADERS = new String[]{ "Fecha", "Descripción", "Valor", "Oficina" };
-        } else {
-            HEADERS = new String[]{ "Fecha", "Descripción", "Valor" };
-        }
+        // Para Davivienda, siempre incluimos las 4 columnas.
+        String[] HEADERS = { "Fecha", "Descripción", "Valor", "Oficina" };
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            
-            // La lógica de creación de hojas ahora usará los encabezados dinámicos
+
+            // --- Lógica añadida para crear las 6 hojas ---
             createSheet(workbook, "General", HEADERS, transactions);
             createSheet(workbook, "Ordenado", HEADERS, transactions.stream().sorted((a, b) -> a.getDescription().compareTo(b.getDescription())).collect(Collectors.toList()));
             createSheet(workbook, "Ingresos", HEADERS, transactions.stream().filter(t -> t.getValue() > 0).sorted((a, b) -> a.getDescription().compareTo(b.getDescription())).collect(Collectors.toList()));
             createSheet(workbook, "Salidas", HEADERS, transactions.stream().filter(t -> t.getValue() <= 0).sorted((a, b) -> a.getDescription().compareTo(b.getDescription())).collect(Collectors.toList()));
-            
+
+            // Ingresos Agrupados
             Map<String, Double> incomeGrouped = transactions.stream()
                 .filter(t -> t.getValue() > 0)
                 .collect(Collectors.groupingBy(AccountBancolombia::getDescription, Collectors.summingDouble(AccountBancolombia::getValue)));
             List<AccountBancolombia> incomeList = incomeGrouped.entrySet().stream()
-                .map(entry -> new AccountBancolombia(null, entry.getKey(), entry.getValue(), null))
+                .map(entry -> new AccountBancolombia("", entry.getKey(), entry.getValue(), "")) // Se usa constructor de 4 args
                 .sorted((a,b) -> a.getDescription().compareTo(b.getDescription()))
                 .collect(Collectors.toList());
             createSheet(workbook, "Ingresos Agrupados", HEADERS, incomeList);
 
+            // Salidas Agrupadas
             Map<String, Double> expenseGrouped = transactions.stream()
                 .filter(t -> t.getValue() <= 0)
                 .collect(Collectors.groupingBy(AccountBancolombia::getDescription, Collectors.summingDouble(AccountBancolombia::getValue)));
             List<AccountBancolombia> expenseList = expenseGrouped.entrySet().stream()
-                .map(entry -> new AccountBancolombia(null, entry.getKey(), entry.getValue(), null))
+                .map(entry -> new AccountBancolombia("", entry.getKey(), entry.getValue(), "")) // Se usa constructor de 4 args
                  .sorted((a,b) -> a.getDescription().compareTo(b.getDescription()))
                 .collect(Collectors.toList());
             createSheet(workbook, "Salidas Agrupadas", HEADERS, expenseList);
 
             workbook.write(out);
             return new ByteArrayInputStream(out.toByteArray());
-        }
+        } 
     }
 
     private void createSheet(Workbook workbook, String sheetName, String[] headers, List<AccountBancolombia> data) {
@@ -88,7 +79,7 @@ public class ExcelService {
             valueCell.setCellValue(transaction.getValue());
             valueCell.setCellStyle(currencyCellStyle);
             
-          
+            // Aseguramos que siempre se escriba la cuarta columna para Davivienda
             if (headers.length > 3) {
                 row.createCell(3).setCellValue(transaction.getBranch());
             }

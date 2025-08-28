@@ -1,4 +1,4 @@
-package com.grupoproyeccion.play.service;
+package com.grupoproyeccion.play.modules.davivienda_account;
 
 import com.grupoproyeccion.play.model.AccountBancolombia;
 import org.springframework.stereotype.Service;
@@ -11,13 +11,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
-public class DaviviendaService implements StatementParser {
+public class DaviviendaAccountService {
 
     private static final List<String> KNOWN_BRANCHES;
 
     static {
          List<String> branches = Arrays.asList(
-            
             "Compras y Pagos PSE",
             "PORTAL PYMES INTERBANCARI",
             "PORTAL PYMES",
@@ -119,13 +118,12 @@ public class DaviviendaService implements StatementParser {
                                  .collect(Collectors.toList());
     }
 
-    @Override
+    // El controlador ahora manejará la lógica de 'supports'
     public boolean supports(String text) {
         String normalizedText = text.toUpperCase().replaceAll("\\s+", " ");
         return normalizedText.contains("DAVIVIENDA") && normalizedText.contains("CUENTA DE AHORROS");
     }
 
-    @Override
     public List<AccountBancolombia> parse(String text) {
         List<AccountBancolombia> transactions = new ArrayList<>();
         String[] lines = text.split("\\r?\\n");
@@ -162,13 +160,11 @@ public class DaviviendaService implements StatementParser {
                             break;
                         }
                     }
-
                     
                     String description = fullLine
                             .replace(dateMatcher.group(0), "")
                             .replace(valueMatcher.group(0), "")
                             .replace(branch, "")
-                            
                             .replaceAll("\\s+", " ")
                             .trim();
                     
@@ -183,7 +179,6 @@ public class DaviviendaService implements StatementParser {
         return transactions;
     }
     
-   
     private double parseValue(String valuePart) {
         Matcher valueMatcher = Pattern.compile("[\\d,.]+").matcher(valuePart);
         valueMatcher.find();
