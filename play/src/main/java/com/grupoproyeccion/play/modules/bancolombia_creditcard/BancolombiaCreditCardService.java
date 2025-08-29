@@ -20,6 +20,7 @@ public class BancolombiaCreditCardService {
 
         String currentCurrency = "";
         boolean inTransactionSection = false;
+        boolean isConsolidado = false; // Flag para el nuevo formato
         StringBuilder currentBlock = new StringBuilder();
 
         Pattern startOfTransactionPattern = Pattern.compile("^[A-Z]?\\d{5,6}|^000000");
@@ -28,14 +29,19 @@ public class BancolombiaCreditCardService {
             String trimmedLine = line.trim();
             String upperCaseLine = trimmedLine.toUpperCase();
 
-            if (upperCaseLine.contains("ESTADO DE CUENTA EN: DOLARES")) {
-                processAndClearBlock(currentBlock, currentCurrency, transactions);
+            // --- MEJORA 1: Detección del tipo de extracto ---
+            if (upperCaseLine.contains("ESTADO DE CUENTA CONSOLIDADO")) {
+                isConsolidado = true;
+            }
+
+            if (upperCaseLine.contains("ESTADO DE CUENTA EN: DOLARES") || upperCaseLine.contains("ESTADO DE CUENTA CONSOLIDADO EN: DOLARES")) {
+                processAndClearBlock(currentBlock, currentCurrency, transactions, isConsolidado);
                 currentCurrency = "USD";
                 inTransactionSection = false;
                 continue;
             }
-            if (upperCaseLine.contains("ESTADO DE CUENTA EN: PESOS")) {
-                processAndClearBlock(currentBlock, currentCurrency, transactions);
+            if (upperCaseLine.contains("ESTADO DE CUENTA EN: PESOS") || upperCaseLine.contains("ESTADO DE CUENTA CONSOLIDADO EN: PESOS")) {
+                processAndClearBlock(currentBlock, currentCurrency, transactions, isConsolidado);
                 currentCurrency = "COP";
                 inTransactionSection = false;
                 continue;
@@ -47,81 +53,88 @@ public class BancolombiaCreditCardService {
             }
             if (!inTransactionSection || trimmedLine.isEmpty()) continue;
 
-           
-            if (startOfTransactionPattern.matcher(trimmedLine).find()) {
-                processAndClearBlock(currentBlock, currentCurrency, transactions);
-                currentBlock.append(trimmedLine);
-            } else if (currentBlock.length() > 0) {
-                currentBlock.append(" ").append(trimmedLine);
+            // La lógica de agrupación de bloques ahora funciona para ambos formatos
+            if (startOfTransactionPattern.matcher(trimmedLine).find() && !isConsolidado) {
+                 processAndClearBlock(currentBlock, currentCurrency, transactions, isConsolidado);
+                 currentBlock.append(trimmedLine);
             } else {
-                
-                currentBlock.append(trimmedLine);
+                 currentBlock.append(" ").append(trimmedLine);
             }
         }
 
-        processAndClearBlock(currentBlock, currentCurrency, transactions);
+        processAndClearBlock(currentBlock, currentCurrency, transactions, isConsolidado);
         return transactions;
     }
 
-    private void processAndClearBlock(StringBuilder block, String currency, List<CreditCardTransaction> transactions) {
+    private void processAndClearBlock(StringBuilder block, String currency, List<CreditCardTransaction> transactions, boolean isConsolidado) {
         if (block.length() > 0) {
-            processBlock(block.toString(), currency, transactions);
+            if (isConsolidado) {
+                processConsolidadoBlock(block.toString(), currency, transactions);
+            } else {
+                processStandardBlock(block.toString(), currency, transactions);
+            }
             block.setLength(0);
         }
     }
 
-    private void processBlock(String block, String currency, List<CreditCardTransaction> transactions) {
+    // --- MEJORA 2: Nuevo método exclusivo para el formato "Consolidado" ---
+    private void processConsolidadoBlock(String block, String currency, List<CreditCardTransaction> transactions) {
         String cleanedBlock = block.replaceAll("\\s+", " ").trim();
 
-        
-
-        
-        Pattern descFirstPattern = Pattern.compile(
-            "^(?!.*\\d{2}/\\d{2}/\\d{4}.*\\d{2}/\\d{2}/\\d{4})" + // Asegura que no haya dos fechas
-            "(.+?)\\s+" +                           // Grupo 1: Descripción
-            "(\\d{2}/\\d{2}/\\d{4})\\s+" +          // Grupo 2: Fecha
-            "([\\d,.-]+)\\s+" +                     // Grupo 3: Valor Original
-            "([\\d,.-]+)\\s+" +                     // Grupo 4: Cargos y Abonos
-            "([\\d,.-]+)$"                          // Grupo 5: Saldo a Diferir
+        // Patrón diseñado para la estructura de la tabla consolidada
+        Pattern transactionPattern = Pattern.compile(
+            "(\\d{2}/\\d{2}/\\d{4})\\s+" +      // Grupo 1: Fecha
+            "(.+?)\\s+" +                       // Grupo 2: Descripción
+            "([\\d,.-]+)\\s+" +                 // Grupo 3: Valor Total
+            "([\\d,.-]+)"                       // Grupo 4: Cuota del Mes
         );
 
-        
-        Pattern dateFirstPattern = Pattern.compile(
-            "(\\d{2}/\\d{2}/\\d{4})\\s+" +          // Grupo 1: Fecha
-            "(.+?)\\s+" +                           // Grupo 2: Descripción
-            "([\\d,.-]+)?\\s*" +                    // Grupo 3: Valor Original (opcional)
-            "(?:[\\d.,]+\\s+){0,2}" +                // Tasas opcionales
-            "([\\d,.-]+)\\s+" +                     // Grupo 4: Cargos y Abonos
-            "([\\d,.-]+)" +                         // Grupo 5: Saldo a Diferir
-            "(?:\\s+\\d{1,2}/\\d{1,2})?"            // Cuotas opcionales
-        );
+        Matcher matcher = transactionPattern.matcher(cleanedBlock);
 
-        
-        Matcher matcher = descFirstPattern.matcher(cleanedBlock);
-        if (matcher.matches()) {
-            try {
-                String descripcion = matcher.group(1).trim();
-                String fecha = matcher.group(2);
-                double valorOriginal = parseFlexibleDouble(matcher.group(3));
-                double cargosYAbonos = parseFlexibleDouble(matcher.group(4));
-                double saldoADiferir = parseFlexibleDouble(matcher.group(5));
-                transactions.add(new CreditCardTransaction(fecha, descripcion, valorOriginal, cargosYAbonos, saldoADiferir, currency));
-                return; // Procesado, salimos
-            } catch (Exception e) {
-                 System.err.println("Error procesando bloque con formato especial: " + cleanedBlock);
-            }
-        }
-
-        
-        matcher = dateFirstPattern.matcher(cleanedBlock);
         while (matcher.find()) {
             try {
                 String fecha = matcher.group(1);
                 String descripcion = matcher.group(2).trim();
-                double valorOriginal = parseFlexibleDouble(matcher.group(3));
-                double cargosYAbonos = parseFlexibleDouble(matcher.group(4));
-                double saldoADiferir = parseFlexibleDouble(matcher.group(5));
-                transactions.add(new CreditCardTransaction(fecha, descripcion, valorOriginal, cargosYAbonos, saldoADiferir, currency));
+                // Ignoramos las líneas de resumen que no son transacciones reales
+                if (descripcion.equalsIgnoreCase("Saldo Anterior") || descripcion.equalsIgnoreCase("Saldo en Mora")) {
+                    continue;
+                }
+                
+                double valorTotal = parseFlexibleDouble(matcher.group(3));
+                double cuotaDelMes = parseFlexibleDouble(matcher.group(4));
+
+                // Mapeamos los nuevos campos a nuestro modelo existente
+                transactions.add(new CreditCardTransaction(fecha, descripcion, valorTotal, cuotaDelMes, 0.0, currency));
+
+            } catch (Exception e) {
+                System.err.println("Error procesando línea en bloque consolidado: " + matcher.group(0));
+            }
+        }
+    }
+
+    // Método anterior, ahora renombrado para claridad
+    private void processStandardBlock(String block, String currency, List<CreditCardTransaction> transactions) {
+        String cleanedBlock = block.replaceAll("\\s+", " ").trim();
+        // ... (El resto del método processBlock anterior se mantiene igual aquí)
+        Pattern descFirstPattern = Pattern.compile(
+            "^(?!.*\\d{2}/\\d{2}/\\d{4}.*\\d{2}/\\d{2}/\\d{4})" + "(.+?)\\s+" + "(\\d{2}/\\d{2}/\\d{4})\\s+" + "([\\d,.-]+)\\s+" + "([\\d,.-]+)\\s+" + "([\\d,.-]+)$"
+        );
+        Pattern dateFirstPattern = Pattern.compile(
+            "(\\d{2}/\\d{2}/\\d{4})\\s+" + "(.+?)\\s+" + "([\\d,.-]+)?\\s*" + "(?:[\\d.,]+\\s+){0,2}" + "([\\d,.-]+)\\s+" + "([\\d,.-]+)" + "(?:\\s+\\d{1,2}/\\d{1,2})?"
+        );
+        Matcher matcher = descFirstPattern.matcher(cleanedBlock);
+        if (matcher.matches()) {
+            try {
+                transactions.add(new CreditCardTransaction(matcher.group(2), matcher.group(1).trim(), parseFlexibleDouble(matcher.group(3)), parseFlexibleDouble(matcher.group(4)), parseFlexibleDouble(matcher.group(5)), currency));
+                return;
+            } catch (Exception e) {
+                 System.err.println("Error procesando bloque con formato especial: " + cleanedBlock);
+            }
+        }
+        matcher = dateFirstPattern.matcher(cleanedBlock);
+        while (matcher.find()) {
+            try {
+                transactions.add(new CreditCardTransaction(matcher.group(1), matcher.group(2).trim(), parseFlexibleDouble(matcher.group(3)), parseFlexibleDouble(matcher.group(4)), parseFlexibleDouble(matcher.group(5)), currency));
             } catch (Exception e) {
                 System.err.println("Error procesando sub-bloque con formato estándar: " + matcher.group(0));
             }
