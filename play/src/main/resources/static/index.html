@@ -5,13 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AccountingTools - Conversor de Extractos</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="https://www.grupoproyeccion.com/wp-content/uploads/2024/02/icoico2-150x150.png">
     <style>
         .drop-zone--over { border-style: solid; background-color: #f0f8ff; }
         .card-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem; width: 100%; max-width: 68rem; }
-        .upload-card { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); padding: 2rem; width: 100%; max-width: 20rem; text-align: center; display: flex; flex-direction: column; }
+        .upload-card { 
+            background-color: white; 
+            border-radius: 0.5rem; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); 
+            padding: 2rem; 
+            width: 100%; 
+            max-width: 20rem; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            overflow: hidden;
+            
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
         .card-content { flex-grow: 1; }
+
+        
+        .upload-card:hover {
+            transform: translateY(-5px); 
+        }
+        .upload-card.bancolombia-account:hover,
+        .upload-card.bancolombia-credit:hover {
+            box-shadow: 0 8px 25px -4px rgba(245, 158, 11, 0.4); 
+        }
+        .upload-card.davivienda:hover {
+            box-shadow: 0 8px 25px -4px rgba(239, 68, 68, 0.4);
+        }
+
+
+        
+        .beta-ribbon {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100px;
+            height: 100px;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .beta-ribbon span {
+            position: absolute;
+            display: block;
+            width: 150px;
+            padding: 5px 0;
+            background-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(0,0,0,.1);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            left: -35px;
+            top: 25px;
+            transform: rotate(-45deg);
+            transform-origin: 50% 50%;
+        }
+        .upload-card.davivienda:hover .beta-ribbon span {
+            background-color: #ef4444; 
+        }
+        .upload-card.bancolombia-credit:hover .beta-ribbon span {
+            background-color: #f59e0b;
+        }
     </style>
-    <link rel="icon" type="image/png" href="https://www.grupoproyeccion.com/wp-content/uploads/2024/02/icoico2-150x150.png">
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen font-sans p-4">
 
@@ -21,7 +82,7 @@
 
     <div class="card-container">
         
-        <div class="upload-card">
+        <div class="upload-card bancolombia-account">
             <div class="card-content">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Logo_Bancolombia.svg" alt="Logo Bancolombia" class="h-8 mx-auto mb-4">
                 <h2 class="text-xl font-bold text-gray-800 mb-1">Cuentas Bancolombia</h2>
@@ -44,7 +105,8 @@
             <div class="status-message mt-4 text-xs"></div>
         </div>
 
-        <div class="upload-card">
+        <div class="upload-card davivienda"> 
+            <div class="beta-ribbon"><span>BETA</span></div> 
             <div class="card-content">
                 <img src="https://paseosanrafael.com/wp-content/uploads/2013/06/1200px-Davivienda_logo.svg.png" alt="Logo Davivienda" class="h-8 mx-auto mb-4">
                 <h2 class="text-xl font-bold text-gray-800 mb-1">Cuentas Davivienda</h2>
@@ -67,8 +129,9 @@
             <div class="status-message mt-4 text-xs"></div>
         </div>
 
-        <div class="upload-card">
-             <div class="card-content">
+        <div class="upload-card bancolombia-credit"> 
+            <div class="beta-ribbon"><span>BETA</span></div> 
+            <div class="card-content">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Logo_Bancolombia.svg" alt="Logo Bancolombia" class="h-8 mx-auto mb-4">
                 <h2 class="text-xl font-bold text-gray-800 mb-1">Tarjeta de Crédito</h2>
                 <p class="text-gray-500 mb-6 text-sm">Para Bancolombia MasterCard.</p>
