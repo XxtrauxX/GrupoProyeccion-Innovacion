@@ -1,11 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    /**
-     * Función reutilizable para inicializar una tarjeta de subida de archivos.
-     * @param {string} formClass - La clase CSS del formulario de la tarjeta.
-     * @param {string} uploadUrl - El endpoint del backend al que se enviará el archivo.
-     * @param {string} downloadFileNameBase - El nombre base para el archivo descargado.
-     */
+
+    
     function initializeUploader(formClass, uploadUrl, downloadFileNameBase) {
         const uploadCard = document.querySelector(`.${formClass}`).closest('.upload-card');
         if (!uploadCard) return;
@@ -113,11 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
         'Conciliacion_Davivienda_Cuentas'
     );
 
-    // Activamos la nueva tarjeta para Tarjetas de Crédito de Bancolombia
     initializeUploader(
         'bancolombia-credit-card-form',
         '/api/bancolombia-credit-card/process',
         'Reporte_TC_Bancolombia'
+    );
+    
+    // --- NUEVO: Activamos la tarjeta para Flypass ---
+    initializeUploader(
+        'flypass-form',
+        '/api/flypass/process',
+        'Reporte_Flypass'
     );
     
 });
