@@ -5,72 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AccountingTools - Conversor de Extractos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/png" href="https://www.grupoproyeccion.com/wp-content/uploads/2024/02/icoico2-150x150.png">
+    <link rel="icon" type="image/png" href="https://www.grupoproyeccion.com/wp-content/uploads/2024/02/icoico2-150x_150.png">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
     <style>
-        .drop-zone--over { border-style: solid; background-color: #f0f8ff; }
-        .card-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem; width: 100%; max-width: 68rem; }
+        .card-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem; width: 100%; max-width: 80rem; }
         .upload-card { 
-            background-color: white; 
-            border-radius: 0.5rem; 
+            background-color: white; border-radius: 0.5rem; 
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); 
-            padding: 2rem; 
-            width: 100%; 
-            max-width: 20rem; 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            position: relative; 
-            overflow: hidden;
-            
+            padding: 2rem; width: 100%; max-width: 20rem; text-align: center; 
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            flex-shrink: 0; 
         }
         .card-content { flex-grow: 1; }
 
-        
-        .upload-card:hover {
-            transform: translateY(-5px); 
-        }
+        .upload-card:hover { transform: translateY(-5px); }
         .upload-card.bancolombia-account:hover,
-        .upload-card.bancolombia-credit:hover {
-            box-shadow: 0 8px 25px -4px rgba(245, 158, 11, 0.4); 
-        }
-        .upload-card.davivienda:hover {
-            box-shadow: 0 8px 25px -4px rgba(239, 68, 68, 0.4);
-        }
+        .upload-card.bancolombia-credit:hover { box-shadow: 0 8px 25px -4px rgba(245, 158, 11, 0.4); }
+        .upload-card.davivienda:hover { box-shadow: 0 8px 25px -4px rgba(239, 68, 68, 0.4); }
+        .upload-card.flypass:hover { box-shadow: 0 8px 25px -4px rgba(31, 41, 55, 0.4); }
 
-
-        
-        .beta-ribbon {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100px;
-            height: 100px;
-            overflow: hidden;
-            z-index: 10;
-        }
+        .beta-ribbon { position: absolute; top: 0; left: 0; width: 100px; height: 100px; overflow: hidden; z-index: 10; }
         .beta-ribbon span {
-            position: absolute;
-            display: block;
-            width: 150px;
-            padding: 5px 0;
-            background-color: #3b82f6;
-            box-shadow: 0 0 10px rgba(0,0,0,.1);
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-align: center;
-            text-transform: uppercase;
-            left: -35px;
-            top: 25px;
-            transform: rotate(-45deg);
+            position: absolute; display: block; width: 150px; padding: 5px 0;
+            background-color: #3b82f6; box-shadow: 0 0 10px rgba(0,0,0,.1);
+            color: #fff; font-size: 0.75rem; font-weight: 600; text-align: center;
+            text-transform: uppercase; left: -35px; top: 25px; transform: rotate(-45deg);
             transform-origin: 50% 50%;
         }
-        .upload-card.davivienda:hover .beta-ribbon span {
-            background-color: #ef4444; 
+        .upload-card.davivienda:hover .beta-ribbon span { background-color: #ef4444; }
+        .upload-card.bancolombia-credit:hover .beta-ribbon span { background-color: #f59e0b; }
+        
+        .swiper-container {
+            width: 100%;
+            max-width: 80rem;
+            padding-top: 20px;
+            padding-bottom: 40px; 
         }
-        .upload-card.bancolombia-credit:hover .beta-ribbon span {
-            background-color: #f59e0b;
+        .swiper-slide {
+            display: flex;
+            justify-content: center;
+            align-items: stretch; /* Asegura que todos los slides tengan la misma altura */
+        }
+        .swiper-button-next, .swiper-button-prev {
+            color: #1f2937;
+            transform: scale(0.8);
+        }
+        .swiper-pagination-bullet-active {
+            background-color: #1f2937;
         }
     </style>
 </head>
@@ -80,82 +64,126 @@
         <img src="https://www.grupoproyeccion.com/wp-content/uploads/2024/04/Logo-GP-Trazo.png" alt="Grupo Proyección Logo" class="w-48 mx-auto">
     </div>
 
-    <div class="card-container">
-        
-        <div class="upload-card bancolombia-account">
-            <div class="card-content">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Logo_Bancolombia.svg" alt="Logo Bancolombia" class="h-8 mx-auto mb-4">
-                <h2 class="text-xl font-bold text-gray-800 mb-1">Cuentas Bancolombia</h2>
-                <p class="text-gray-500 mb-6 text-sm">Para Ahorros y Corriente.</p>
-                <form class="bancolombia-account-form space-y-4">
-                    <div class="drop-zone border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-blue-500 transition-colors">
-                        <input type="file" class="file-input hidden" accept=".pdf">
-                        <p class="text-gray-500 text-sm">Arrastra o haz clic para subir</p>
+    <div class="swiper-container">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide">
+                <div class="upload-card bancolombia-account">
+                    <div class="card-content">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Logo_Bancolombia.svg" alt="Logo Bancolombia" class="h-8 mx-auto mb-4">
+                        <h2 class="text-xl font-bold text-gray-800 mb-1">Cuentas Bancolombia</h2>
+                        <p class="text-gray-500 mb-6 text-sm">Para Ahorros y Corriente.</p>
+                        <form class="bancolombia-account-form space-y-4">
+                            <div class="drop-zone border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-blue-500 transition-colors">
+                                <input type="file" class="file-input hidden" accept=".pdf">
+                                <p class="text-gray-500 text-sm">Arrastra o haz clic para subir</p>
+                            </div>
+                            <div class="file-preview hidden items-center justify-between bg-gray-50 p-2 rounded-lg"><span class="file-name text-xs text-gray-700"></span><button type="button" class="remove-file-btn text-red-500 hover:text-red-700 text-xs font-semibold">Quitar</button></div>
+                            <div class="password-section hidden"><input type="password" class="password-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Contraseña (opcional)"></div>
+                            <button type="submit" class="submit-btn w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Convertir</button>
+                        </form>
                     </div>
-                    <div class="file-preview hidden items-center justify-between bg-gray-50 p-2 rounded-lg">
-                        <span class="file-name text-xs text-gray-700"></span>
-                        <button type="button" class="remove-file-btn text-red-500 hover:text-red-700 text-xs font-semibold">Quitar</button>
-                    </div>
-                    <div class="password-section hidden">
-                        <input type="password" class="password-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Contraseña (opcional)">
-                    </div>
-                    <button type="submit" class="submit-btn w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Convertir</button>
-                </form>
+                    <div class="status-message mt-4 text-xs"></div>
+                </div>
             </div>
-            <div class="status-message mt-4 text-xs"></div>
-        </div>
 
-        <div class="upload-card davivienda"> 
-            <div class="beta-ribbon"><span>BETA</span></div> 
-            <div class="card-content">
-                <img src="https://paseosanrafael.com/wp-content/uploads/2013/06/1200px-Davivienda_logo.svg.png" alt="Logo Davivienda" class="h-8 mx-auto mb-4">
-                <h2 class="text-xl font-bold text-gray-800 mb-1">Cuentas Davivienda</h2>
-                <p class="text-gray-500 mb-6 text-sm">Para Cuentas de Ahorros.</p>
-                <form class="davivienda-account-form space-y-4">
-                    <div class="drop-zone border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-red-500 transition-colors">
-                        <input type="file" class="file-input hidden" accept=".pdf">
-                        <p class="text-gray-500 text-sm">Arrastra o haz clic para subir</p>
+            <div class="swiper-slide">
+                <div class="upload-card davivienda"> 
+                    <div class="beta-ribbon"><span>BETA</span></div> 
+                    <div class="card-content">
+                        <img src="https://paseosanrafael.com/wp-content/uploads/2013/06/1200px-Davivienda_logo.svg.png" alt="Logo Davivienda" class="h-8 mx-auto mb-4">
+                        <h2 class="text-xl font-bold text-gray-800 mb-1">Cuentas Davivienda</h2>
+                        <p class="text-gray-500 mb-6 text-sm">Para Cuentas de Ahorros.</p>
+                        <form class="davivienda-account-form space-y-4">
+                            <div class="drop-zone border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-red-500 transition-colors">
+                                <input type="file" class="file-input hidden" accept=".pdf">
+                                <p class="text-gray-500 text-sm">Arrastra o haz clic para subir</p>
+                            </div>
+                            <div class="file-preview hidden items-center justify-between bg-gray-50 p-2 rounded-lg"><span class="file-name text-xs text-gray-700"></span><button type="button" class="remove-file-btn text-red-500 hover:text-red-700 text-xs font-semibold">Quitar</button></div>
+                            <div class="password-section hidden"><input type="password" class="password-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Contraseña (opcional)"></div>
+                            <button type="submit" class="submit-btn w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400" disabled>Convertir</button>
+                        </form>
                     </div>
-                    <div class="file-preview hidden items-center justify-between bg-gray-50 p-2 rounded-lg">
-                        <span class="file-name text-xs text-gray-700"></span>
-                        <button type="button" class="remove-file-btn text-red-500 hover:text-red-700 text-xs font-semibold">Quitar</button>
-                    </div>
-                    <div class="password-section hidden">
-                        <input type="password" class="password-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Contraseña (opcional)">
-                    </div>
-                    <button type="submit" class="submit-btn w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400" disabled>Convertir</button>
-                </form>
+                    <div class="status-message mt-4 text-xs"></div>
+                </div>
             </div>
-            <div class="status-message mt-4 text-xs"></div>
-        </div>
 
-        <div class="upload-card bancolombia-credit"> 
-            <div class="beta-ribbon"><span>BETA</span></div> 
-            <div class="card-content">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Logo_Bancolombia.svg" alt="Logo Bancolombia" class="h-8 mx-auto mb-4">
-                <h2 class="text-xl font-bold text-gray-800 mb-1">Tarjeta de Crédito</h2>
-                <p class="text-gray-500 mb-6 text-sm">Para Bancolombia MasterCard.</p>
-                <form class="bancolombia-credit-card-form space-y-4">
-                    <div class="drop-zone border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-yellow-500 transition-colors">
-                        <input type="file" class="file-input hidden" accept=".pdf">
-                        <p class="text-gray-500 text-sm">Arrastra o haz clic para subir</p>
+            <div class="swiper-slide">
+                <div class="upload-card bancolombia-credit"> 
+                    <div class="beta-ribbon"><span>BETA</span></div> 
+                    <div class="card-content">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Logo_Bancolombia.svg" alt="Logo Bancolombia" class="h-8 mx-auto mb-4">
+                        <h2 class="text-xl font-bold text-gray-800 mb-1">Tarjeta de Crédito</h2>
+                        <p class="text-gray-500 mb-6 text-sm">Para Bancolombia MasterCard.</p>
+                        <form class="bancolombia-credit-card-form space-y-4">
+                            <div class="drop-zone border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-yellow-500 transition-colors">
+                                <input type="file" class="file-input hidden" accept=".pdf">
+                                <p class="text-gray-500 text-sm">Arrastra o haz clic para subir</p>
+                            </div>
+                            <div class="file-preview hidden items-center justify-between bg-gray-50 p-2 rounded-lg"><span class="file-name text-xs text-gray-700"></span><button type="button" class="remove-file-btn text-red-500 hover:text-red-700 text-xs font-semibold">Quitar</button></div>
+                            <div class="password-section hidden"><input type="password" class="password-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Contraseña (opcional)"></div>
+                            <button type="submit" class="submit-btn w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors disabled:bg-gray-400" disabled>Convertir</button>
+                        </form>
                     </div>
-                    <div class="file-preview hidden items-center justify-between bg-gray-50 p-2 rounded-lg">
-                        <span class="file-name text-xs text-gray-700"></span>
-                        <button type="button" class="remove-file-btn text-red-500 hover:text-red-700 text-xs font-semibold">Quitar</button>
-                    </div>
-                    <div class="password-section hidden">
-                        <input type="password" class="password-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Contraseña (opcional)">
-                    </div>
-                    <button type="submit" class="submit-btn w-full bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors disabled:bg-gray-400" disabled>Convertir</button>
-                </form>
+                    <div class="status-message mt-4 text-xs"></div>
+                </div>
             </div>
-            <div class="status-message mt-4 text-xs"></div>
-        </div>
 
+            <div class="swiper-slide">
+                <div class="upload-card flypass">
+                    <div class="card-content">
+                        <img src="https://cdn.prod.website-files.com/67632d56df8ec59711d71a15/67ed91272e19371114b252f9_Logo-flypass-verde-gris.png" alt="Logo Flypass" class="h-8 mx-auto mb-4">
+                        <h2 class="text-xl font-bold text-gray-800 mb-1">Extracto Flypass</h2>
+                        <p class="text-gray-500 mb-6 text-sm">Para peajes y parqueaderos.</p>
+                        <form class="flypass-form space-y-4">
+                            <div class="drop-zone border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-gray-500 transition-colors">
+                                <input type="file" class="file-input hidden" accept=".pdf">
+                                <p class="text-gray-500 text-sm">Arrastra o haz clic para subir</p>
+                            </div>
+                            <div class="file-preview hidden items-center justify-between bg-gray-50 p-2 rounded-lg"><span class="file-name text-xs text-gray-700"></span><button type="button" class="remove-file-btn text-red-500 hover:text-red-700 text-xs font-semibold">Quitar</button></div>
+                            <div class="password-section hidden"><input type="password" class="password-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Contraseña (opcional)"></div>
+                            <button type="submit" class="submit-btn w-full bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-900 transition-colors disabled:bg-gray-400" disabled>Convertir</button>
+                        </form>
+                    </div>
+                    <div class="status-message mt-4 text-xs"></div>
+                </div>
+            </div>
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
     </div>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="app.js"></script>
+
+    <script>
+        const swiper = new Swiper('.swiper-container', {
+            slidesPerView: 1,
+            spaceBetween: 30,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                640: {
+                    slidesPerView: 2,
+                    spaceBetween: 20,
+                },
+                1024: {
+                    slidesPerView: 3,
+                    spaceBetween: 30,
+                },
+                1280: {
+                    slidesPerView: 4,
+                    spaceBetween: 30,
+                }
+            }
+        });
+    </script>
 </body>
 </html>
