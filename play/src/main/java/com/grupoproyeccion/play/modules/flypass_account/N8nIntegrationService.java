@@ -19,7 +19,7 @@ public class N8nIntegrationService {
 
     private final RestTemplate restTemplate;
 
-    // Inyectamos la URL del webhook desde application.properties
+    
     @Value("${n8n.flypass.webhook.url}")
     private String n8nWebhookUrl;
 
@@ -27,14 +27,8 @@ public class N8nIntegrationService {
         this.restTemplate = restTemplate;
     }
 
-    /**
-     * Envía el archivo PDF a n8n y devuelve la respuesta JSON como un String.
-     * @param file El archivo PDF recibido del usuario.
-     * @return Un String que contiene el JSON con las transacciones extraídas.
-     * @throws IOException Si hay un error al leer el archivo.
-     */
     public String processPdfViaN8n(MultipartFile file) throws IOException {
-        // Preparamos el archivo para ser enviado como datos binarios
+        
         ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
             @Override
             public String getFilename() {
@@ -42,7 +36,7 @@ public class N8nIntegrationService {
             }
         };
 
-        // Creamos un cuerpo de formulario multipart, que es el estándar para enviar archivos
+        
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("file", fileResource);
 
